@@ -9,9 +9,9 @@ from pandas import DataFrame
 
 #S = Preço da ação base
 #K = Strike da opção
-#T = Tempo até o vencimento
-#r = selic
-#sigma = volatilidade de ação base
+#T = Tempo até o vencimento em proporção ao ano (1 = 1 ano)
+#r = selic diaria em decimal
+#sigma = volatilidade de ação base em decimal (29% = 0.29)
 
 #Função pré-requisito
 class bs:
@@ -70,3 +70,25 @@ class bs:
                 return 0
             else:
                 return round(sigma, 4)
+
+    def call_delta(self, S, K, T, r, sigma):
+        return norm.cdf(self.d1_fun(S,K,T,r,sigma))
+    def call_gamma(self, S, K, T, r, sigma):
+        return norm.pdf(self.d1_fun(S,K,T,r,sigma))/(S*sigma*sqrt(T))
+    def call_vega(self, S, K, T, r, sigma):
+        return 0.01*(S*norm.pdf(self.d1_fun(S,K,T,r,sigma))*sqrt(T))
+    def call_theta(self, S, K, T, r, sigma):
+        return ((-(S*norm.pdf(self.d1_fun(S,K,T,r,sigma))*sigma)/(2*sqrt(T))) - (r*K*exp(-r*T)*norm.cdf(-self.d2_fun(S,K,T,r,sigma))))/252
+    def call_rho(self, S, K, T, r, sigma):
+        return 0.01*(K*T*exp(-r*T)*norm.cdf(self.d2_fun(S,K,T,r,sigma)))
+        
+    def put_delta(self, S, K, T, r, sigma):
+        return -norm.cdf(-self.d1_fun(S,K,T,r,sigma))
+    def put_gamma(self, S, K, T, r, sigma):
+        return norm.pdf(self.d1_fun(S,K,T,r,sigma))/(S*sigma*sqrt(T))
+    def put_vega(self, S, K, T, r, sigma):
+        return 0.01*(S*norm.pdf(self.d1_fun(S,K,T,r,sigma))*sqrt(T))
+    def put_theta(self, S, K, T, r, sigma):
+        return ((-(S*norm.pdf(self.d1_fun(S,K,T,r,sigma))*sigma)/(2*sqrt(T))) + (r*K*exp(-r*T)*norm.cdf(-self.d2_fun(S,K,T,r,sigma))))/252
+    def put_rho(self, S, K, T, r, sigma):
+        return 0.01*(-K*T*exp(-r*T)*norm.cdf(-self.d2_fun(S,K,T,r,sigma)))

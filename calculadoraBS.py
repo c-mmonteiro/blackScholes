@@ -3,6 +3,7 @@ from tkinter import *
 
 import MetaTrader5 as mt5
 
+import time
 from datetime import datetime, timedelta
 import pytz
 
@@ -26,11 +27,11 @@ class Calculadora_BS:
         self.root.title('Calculadora Black and Scholes')
         self.root.geometry("500x400")
 
-        self.lbl_input_ativo = tk.Label(self.root, width=16, height = 1, anchor='w', text="Codigo da Opção:")
+        self.lbl_input_ativo = tk.Label(self.root, width=16, height = 1, anchor='w', text="Código da Opção:")
         self.lbl_input_ativo.place(y = 10, x = 50)
 
         self.input_ativo = tk.Text(self.root, width = 10, height = 1)
-        self.input_ativo.insert(INSERT, "BBASJ418")
+        self.input_ativo.insert(INSERT, "BBASX32")
         self.input_ativo.place(y = 30, x = 50)
 
         self.btn_input_ativo = Button(self.root, text="Calcular", command=self.pegar_dados)
@@ -50,6 +51,10 @@ class Calculadora_BS:
 
         codigo = self.input_ativo.get("1.0", "end-1c")
 
+        mt5.symbol_select(codigo, True)
+
+        time.sleep(1)
+
         info = mt5.symbol_info(codigo)
 
         self.tipo = ["CALL", "PUT"][info.option_right == 1]
@@ -60,6 +65,10 @@ class Calculadora_BS:
             self.ultimo = valBase[0]['close']
         else:
             self.ultimo = info.last
+
+        self.time_opcao = datetime.utcfromtimestamp(info.time)
+
+        mt5.symbol_select(codigo, False)
 
         ####### - Impressão dos dados basicos da opção
 
@@ -76,14 +85,25 @@ class Calculadora_BS:
         self.lbl_info4 = tk.Label(self.root, width=25, height = 1, anchor='w', text="Ultimo: R$" + str(self.ultimo))
         self.lbl_info4.place(y = 140, x = 50)
 
+        self.lbl_info5 = tk.Label(self.root, width=25, height = 1, anchor='w', text="Hora: " + self.time_opcao.strftime("%d/%m/%Y - %H:%M:%S"))
+        self.lbl_info5.place(y = 160, x = 50)
+
         ##################################################################################
         ### Ativo
         ##################################################################################
 
+        mt5.symbol_select(info.basis, True)
+
+        time.sleep(1)
+
         valBase = mt5.copy_rates_from_pos(info.basis, mt5.TIMEFRAME_D1, 0, self.diasVol)
         self.valorAtivoBase = valBase[len(valBase) - 1]['close']
 
-        #calcula a volatilidade histórica do ativo
+        self.time_base = datetime.utcfromtimestamp(valBase[len(valBase) - 1]['time'])
+
+        mt5.symbol_select(info.basis, False)
+
+        #Calcula a volatilidade histórica do ativo
         retornos = []
         for idx, v in enumerate(valBase):
             if idx != 0:
@@ -124,14 +144,19 @@ class Calculadora_BS:
         self.lbl_info2 = tk.Label(self.root, width=25, height = 1, anchor='w', text=('Ultimo: R$ ' + str(self.ultimoAtivo)))
         self.lbl_info2.place(y = 100, x = 250)
 
+        self.lbl_info6 = tk.Label(self.root, width=25, height = 1, anchor='w', text="Hora: " + self.time_base.strftime("%d/%m/%Y"))
+        self.lbl_info6.place(y = 120, x = 250)
+
         self.lbl_info3 = tk.Label(self.root, width=25, height = 1, anchor='w', text="Vol Hist: " + str(round(100*self.sigma_hist, 2)))
-        self.lbl_info3.place(y = 120, x = 250)
-
-        self.lbl_info3 = tk.Label(self.root, width=25, height = 1, anchor='w', text="EWMA: " + str(round(100*self.ewma, 2)))
-        self.lbl_info3.place(y = 140, x = 250)
-
-        self.lbl_info3 = tk.Label(self.root, width=25, height = 1, anchor='w', text="Vol Livro: " + str(round(100*self.sigma_livro, 2)))
         self.lbl_info3.place(y = 160, x = 250)
+
+        self.lbl_info4 = tk.Label(self.root, width=25, height = 1, anchor='w', text="EWMA: " + str(round(100*self.ewma, 2)))
+        self.lbl_info4.place(y = 180, x = 250)
+
+        self.lbl_info5 = tk.Label(self.root, width=25, height = 1, anchor='w', text="Vol Livro: " + str(round(100*self.sigma_livro, 2)))
+        self.lbl_info5.place(y = 200, x = 250)
+
+        
 
 
         if not (mt5.shutdown()):
@@ -143,10 +168,10 @@ class Calculadora_BS:
         #####################################################################################
 
         self.dias = np.busday_count(self.hoje.strftime('%Y-%m-%d'), self.vencimento.strftime('%Y-%m-%d'))
-        self.lbl_info2 = tk.Label(self.root, width=30, height = 1, anchor='w', text=('Dias para o Vencimento: ' + str(self.dias)))
+        self.lbl_info2 = tk.Label(self.root, width=25, height = 1, anchor='w', text=('Dias para o Vencimento: ' + str(self.dias)))
         self.lbl_info2.place(y = 180, x = 50)
 
-        self.lbl_info3 = tk.Label(self.root, width=30, height = 1, anchor='w', text="Taxa de Juros: " + str(round(self.juros*100, 2)))
+        self.lbl_info3 = tk.Label(self.root, width=25, height = 1, anchor='w', text="Taxa de Juros: " + str(round(self.juros*100, 2)))
         self.lbl_info3.place(y = 200, x = 50)
 
 

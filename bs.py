@@ -38,7 +38,7 @@ class bs:
             passo = 5
             sigma = 5
             Price_implied = self.bs_call(S, K, T, r, sigma)
-            while (abs(Price-Price_implied) > 0.005) and (passo > 0.001):
+            while (abs(Price-Price_implied) > 0.002) and (passo > 0.0001):
                 passo = passo/2
                 if Price>Price_implied:
                     sigma = sigma + passo
